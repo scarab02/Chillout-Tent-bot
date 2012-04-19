@@ -21,7 +21,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 //variables
 //bot and room information - obtain from http://alaingilbert.github.com/Turntable-API/bookmarklet.html
 var Bot    = require('../node_modules/ttapi');
-var AUTH   = 'auth+live+218f8fd256dbed5bda5aa394f5abc9174de80a20'; //put the auth+live ID here for your bots acct
+var AUTH   = 'auth+live+XXXXXX'; //put the auth+live ID here for your bots acct
 var USERID = '4f8e0186aaa5cd090d000097'; //put the bots user id here
 var ROOMID = '4e130f8d14169c1285007e79'; //put your turntable rooms id here
 var MASTERID = '4e0bbaf0a3f751466f0b64ad'; //put your personal user id here
