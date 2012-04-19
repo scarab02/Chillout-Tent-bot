@@ -4,7 +4,7 @@
 // 
 // Original created by: Michael Belardo http://GPlus.to/TerrorDactylDesigns
 //  
-// Updated by: Don O'Neill http://www.downtempo.com
+// Updated by: Don ONeill https://github.com/rrxtns
 //
 ///////////////////////////////////////////////////////////////////////////////
 /*
@@ -20,12 +20,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 //variables
 //bot and room information - obtain from http://alaingilbert.github.com/Turntable-API/bookmarklet.html
-var Bot    = require('../node_modules/ttapi');
-var AUTH   = 'auth+live+218f8fd256dbed5bda5aa394f5abc9174de80a20'; //put the auth+live ID here for your bots acct
+var Bot    = require('ttapi');
+var AUTH   = 'auth+XXXXXX'; //put the auth+live ID here for your bots acct
 var USERID = '4f8e0186aaa5cd090d000097'; //put the bots user id here
 var ROOMID = '4e130f8d14169c1285007e79'; //put your turntable rooms id here
 var MASTERID = '4e0bbaf0a3f751466f0b64ad'; //put your personal user id here
 var MASTERNAME = 'Kim Jung Chill'; //put your personal user name here
+var CREATORID = '4e19d4a2a3f7511323005128'; //put your rooms creator ID here
+var CREATORNAME = 'jsides'; //put your rooms creator ID here
+
 //for API calls
 var http = require('http'); 
 // load the bot
@@ -47,6 +50,8 @@ bot.on('roomChanged',  function (data) { console.log('The bot has changed room.'
 bot.on('speak',        function (data) { console.log('Someone has spoken', data); });
 bot.on('update_votes', function (data) { console.log('Someone has voted',  data); });
 bot.on('registered',   function (data) { console.log('Someone registered', data); });
+bot.on('add_DJ',   function (data) { console.log('DJ stepped up', data); });
+bot.on('rem_DJ',   function (data) { console.log('DJ stepped down', data); });
 
 //user theUsersList code from https://github.com/alaingilbert/Turntable-API/blob/master/examples/users_list.js
 bot.on('roomChanged', function (data) {
@@ -115,7 +120,8 @@ var meowList = [
 ];
 
 
-//main room bot actions and features
+// BEGIN main room bot actions and features
+
 //Allow chillbot to become a psychic medium who can channel your spirit..... AKA.. IM him and he speaks it to the room
 bot.on('pmmed', function (data){ 
   if (data.senderid == MASTERID) { 
@@ -126,6 +132,7 @@ bot.on('pmmed', function (data){
     }
   }
 });
+
 //welcome new people
 bot.on('registered',	function (data) { 
   if (shutUp == false) {
@@ -133,7 +140,9 @@ bot.on('registered',	function (data) {
 //      bot.speak('Never fear Chillout Tent Denizens! I, ' +data.user[0].name+ ' your faithful chillbot, have arrived!')
     } else if (data.user[0].userid == MASTERID) { //if the master arrives announce him specifically
       bot.speak('Dearest Subjects '+MASTERNAME+', your friendly neighborhood Dictator of Chill has arrived!') 
-    } else {
+    } else if (data.user[0].userid == CREATORID) { //if the master arrives announce him specifically
+      bot.speak('Tent denizens say hello to '+CREATORNAME+' - the Tents esteemed Creator!') 
+	} else {
 //      bot.speak('Welcome '+data.user[0].name+'! Type /help to learn how to control me.'); //welcome the rest
     }
   }
@@ -144,9 +153,10 @@ bot.on('registered',	function (data) {
   bot.on('newsong', function (data){ bot.bop(); });
 */
 
-
 //escorted off the stage sh** talk. //note that if you also use the rem_dj function this function will never trigger, the rem_dj will trigger instead
-bot.on('booted_user', function (data){ bot.speak('Don\'t let the door hit ya where the good lord split ya!'); });
+bot.on('booted_user', function (data){ 
+	bot.speak('Don\'t let the door hit ya where the good lord split ya!'); 
+});
 
 //new DJ hype-man
 bot.on('add_dj', function (data) { 
@@ -182,17 +192,33 @@ bot.on('speak', function (data) {
      }
      // Respond to "/chillbot" command
      if (data.text.match(/^\/chillbot$/)) {
-        bot.speak('BOOM BOT v6.6.6 \n\r Coded by: http://GPlus.to/TerrordactylDesigns/ \n\r Acquire your own at https://github.com/TerrordactylDesigns/boombot'); //note that line break and return does not appear in the web browser. However, it does appear on iPhone chat window.
+        bot.speak('Chill BOT v6.6.6 \n\r Coded by: http://GPlus.to/TerrordactylDesigns/ \n\r Acquire your own at https://github.com/TerrordactylDesigns/boombot'); //note that line break and return does not appear in the web browser. However, it does appear on iPhone chat window.
      }
      // Respond to "/help" command
      if (data.text.match(/^\/help$/)) {
-//     	  bot.speak('My current command list is /hello, /help, /rules, /lyrics, /video, /boo, /cheer, /haters, /meow, /rich, /chuck, /winning, /boombot. Plus a few hidden ones ;) remember to check for new updates!');
-     	  bot.speak('My current command list is /hello, /help, /rules, /lyrics, /video, /boombot. Plus a few hidden ones ;) remember to check for new updates!');
+		//bot.speak('My current command list is /hello, /help, /rules, /lyrics, /video, /boo, /cheer, /haters, /meow, /rich, /chuck, /winning, /chillbot. Plus a few hidden ones ;) remember to check for new updates!');
+     	bot.speak('My current command list is /hello, /help, /rules, /video, /genre, /queue, /chillbot. Plus a few hidden ones ;) remember to check for new updates!');
      }
      // Respond to "/rules" command
      if (data.text.match(/^\/rules$/)) {
-     	  bot.speak('Its our room, and our rules..\n\r Suck it up cupcake. \n\r Your room moderators are: enter them here'); //fill in with your information. line breaks and carriage returns will not display on the web browser but will on iPhone chat window.
+     	bot.speak('Its our room, and our rules..\n\r Suck it up cupcake. \n\r Your room moderators are: enter them here'); //fill in with your information. line breaks and carriage returns will not display on the web browser but will on iPhone chat window.
      }
+     if (data.text.match(/^\/tasha$/)) {
+     	bot.speak(':heart: FREE TASHA!  FREE TASHA!  FREE TASHA!  :heart:');
+     }
+     if (data.text.match(/^\/lunch$/)) {
+     	bot.speak('Enjoy your :fork_and_knife: '+data.name+' cya l8r!');
+     }
+     if (data.text.match(/^\/genre$/)) {
+     	bot.speak('We Play Downtempo, NuJazz, electro-swing & Triphop. DJ queue list and *MUSICAL STYLE GUIDANCE HERE*: http://chillout-tent.wikispaces.com/');
+     }	 
+     if (data.text.match(/^\/starve$/)) {
+     	bot.speak('NO RICE FOR YOU '+data.name+'!!');
+     }	 
+     if (data.text.match(/^\/queue$/)) {
+     	bot.speak('@'+data.name+' the DJ queue can be found here: http://chillout-tent.wikispaces.com/DJ_list');
+     }	 
+
      // Respond to "/cheer" command
  //    if (data.text.match(/^\/cheer$/)) {
  //    	  var rndm = Math.floor(Math.random() * 3);
@@ -236,45 +262,47 @@ bot.on('speak', function (data) {
 //        bot.speak("I'm not your guy, buddy.");
 //     }
      // Respond to "/rich" command
-//     if (data.text.match(/^\/rich$/)) {
-//        bot.speak("I don't think you realize how rich he really is. In fact, I should put on a monocle.  /monocle");
-//     }
-     // Respond to "/lyrics" command
-     if (data.text.match(/^\/lyrics$/)) {
-       bot.roomInfo(true, function(data) { 
-         //get the current song name and artist, then replace blank spaces with underscores
-         var currSong = data.room.metadata.current_song.metadata.song;
-         var currArtist = data.room.metadata.current_song.metadata.artist;
-         currSong = currSong.replace(/ /g,"_");
-         currArtist = currArtist.replace(/ /g,"_");
-         currSong = currSong.replace(/\./g,"");
-         currArtist = currArtist.replace(/\./g,"");
-         //build the api call object
-         var options = {
-           host: 'lyrics.wikia.com',
-           port: 80,
-           path: '/api.php?artist=' + currArtist + '&song=' + currSong + '&fmt=json'
-         };
-         //call the api
-         http.get(options, function(res) {
-           res.on('data', function(chunk) {  
-                try {
-                  //lyrics wiki isnt true JSON so JSON.parse chokes
-                  var obj = eval("(" + chunk + ')');
-                  //give back the lyrics. the api only gives you the first few words due to licensing
-                  bot.speak(obj.lyrics);
-                  //return the url to the full lyrics
-                  bot.speak(obj.url);   
-                  console.log(obj);
-                } catch (err) {
-                  bot.speak(err);
-                }
-           });
-         }).on('error', function(e) {
-           bot.speak("Got error: " + e.message);
-         });
-       });
+     if (data.text.match(/^\/rich$/)) {
+        bot.speak("I don't think you realize how rich he really is. In fact, I should put on a monocle.  /monocle");
      }
+     // Respond to "/lyrics" command
+//     if (data.text.match(/^\/lyrics$/)) {
+//       bot.roomInfo(true, function(data) { 
+//         //get the current song name and artist, then replace blank spaces with underscores
+//         var currSong = data.room.metadata.current_song.metadata.song;
+//         var currArtist = data.room.metadata.current_song.metadata.artist;
+//         currSong = currSong.replace(/ /g,"_");
+//         currArtist = currArtist.replace(/ /g,"_");
+//         currSong = currSong.replace(/\./g,"");
+//         currArtist = currArtist.replace(/\./g,"");
+//         //build the api call object
+//         var options = {
+//           host: 'lyrics.wikia.com',
+//           port: 80,
+//           path: '/api.php?artist=' + currArtist + '&song=' + currSong + '&fmt=json'
+//         };
+//         //call the api
+//         http.get(options, function(res) {
+//           res.on('data', function(chunk) {  
+//                try {
+//                  //lyrics wiki isnt true JSON so JSON.parse chokes
+//                  var obj = eval("(" + chunk + ')');
+//                  //give back the lyrics. the api only gives you the first few words due to licensing
+//                  bot.speak(obj.lyrics);
+//                  //return the url to the full lyrics
+//                  bot.speak(obj.url);   
+//                  console.log(obj);
+//                } catch (err) {
+//                  bot.speak(err);
+//                }
+//           });
+//         }).on('error', function(e) {
+//           bot.speak("I can't do that Dave: " + e.message);
+//         });
+//       });
+//	 // END "fetch lyrics"  
+//     }
+
      // Respond to "/video" command
     if (data.text.match(/^\/video$/)) {
       bot.roomInfo(true, function(data) { 
@@ -311,9 +339,10 @@ bot.on('speak', function (data) {
           });
 
         }).on('error', function(e) {
-          bot.speak("Got error: " + e.message);
+          bot.speak("I can't do that Dave: " + e.message);
         });
       });
+	// END "fetch video" command  
     }
      // Respond to /chuck
 //     if (data.text.match(/^\/chuck$/)) {
@@ -362,11 +391,13 @@ bot.on('speak', function (data) {
       searchQuery = searchQuery.split(' ').join('+');
       bot.speak("http://lmgtfy.com/?q=" + searchQuery); //returns a link to let me google that for you for both your search and my amusement of delivery method
     }
-
+  // End "if NOT commanded to 'shutup'
   }
+// End "general bot chatting"
 });
+
 // DJ control
-//this next section looks anywhere in the sentence for the word boombot. if it was said by your user id, it will then look for any of the commands and react.
+//this next section looks anywhere in the sentence for the word chillbot. if it was said by MASTERS user id, it will then look for any of the commands and react.
 bot.on('speak', function (data) {
   if ((data.text.match(/chillbot/i)) &&(data.userid == MASTERID)) { 
     //tell the bot to enter silent mode (doesnt announce users or welcome people or respond to commands other than admin commands)
@@ -448,7 +479,7 @@ bot.on('speak', function (data) {
             var newSong = data.room.metadata.current_song._id;
             var newSongName = songName = data.room.metadata.current_song.metadata.song;
             bot.playlistAdd(newSong);
- //           bot.speak('Added '+newSongName+' to the masters amusement list.');
+            bot.speak('Added '+newSongName+' to my playlist.');
 			console.log('Added ' +newSongName+ ' to playlist');
           } catch (err) {
             errMsg(err);
@@ -458,45 +489,47 @@ bot.on('speak', function (data) {
     //The below commands will modify the bots laptop. Set before he takes the stage. This command can be activated while the bot is DJ'ing, however, the laptop icon will not change until he leaves the stage and comes back.
     //set the bots laptop to an iPhone
     if (data.text.match(/phone up/i)) {
-//      bot.speak('iPhone mode ready master.');
+		bot.speak('iPhone mode ready master.');
 		console.log('iPhone mode ready.');
-      bot.modifyLaptop('iphone');
+		bot.modifyLaptop('iphone');
     }
     //set the bots laptop to a mac
     if (data.text.match(/fruit up/i)) {
-//      bot.speak('Apple mode ready master.');
+		bot.speak('Apple mode ready master.');
 		console.log('Apple mode ready.');
-      bot.modifyLaptop('mac');
+		bot.modifyLaptop('mac');
     }
     //set the bots laptop to linux
     if (data.text.match(/nix up/i)) {
-//      bot.speak('Ubuntu mode ready master.');
+		bot.speak('Ubuntu mode ready master.');
 		console.log('Ubuntu mode ready.');
-      bot.modifyLaptop('linux');
+		bot.modifyLaptop('linux');
     }
     //set the bots laptop to chromeOS
     if (data.text.match(/chrome up/i)) {
-//      bot.speak('Riding on chrome son.');
+		bot.speak('Riding on chrome son.');
 		console.log('Chrome mode ready.');
-      bot.modifyLaptop('chrome');
+		bot.modifyLaptop('chrome');
     }
+  // End "repond to /chillbot <command>"	
   }
+// End "do things while 'speaking'"
 });
 
 
 // downvote announcer for calling people out //requires the user list object from above //this is hit or miss lately some users return an empty object. I will work more on it when I have time.
-bot.on('update_votes', function (data) { 
-  if (data.room.metadata.votelog[0].toString().match(/down/i)) {
-    try {
-      var uncut = data.room.metadata.votelog[0].toString();
-      var chopped = 'b' + uncut.substring(0, uncut.indexOf(','));
-      var jerk = theUsersList[chopped].name
-      bot.speak(jerk + ' thinks your song sucks..');    
-    } catch (err) {
-      errMsg(err);
-    }
-  } 
-});
+//bot.on('update_votes', function (data) { 
+//  if (data.room.metadata.votelog[0].toString().match(/down/i)) {
+//    try {
+//      var uncut = data.room.metadata.votelog[0].toString();
+//      var chopped = 'b' + uncut.substring(0, uncut.indexOf(','));
+//      var jerk = theUsersList[chopped].name
+//      bot.speak(jerk + ' thinks your song sucks..');    
+//    } catch (err) {
+//      errMsg(err);
+//    }
+//  } 
+//});
 
 //debug commands
 bot.on('speak', function (data) {
