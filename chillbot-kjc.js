@@ -17,26 +17,18 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
-//variables
-global.moderators = new Array(); //get all the Mods
 //bot and room information - obtain from http://alaingilbert.github.com/Turntable-API/bookmarklet.html
 var Bot = require('ttapi');
 var FS = require('fs');
 var AUTH = 'auth+live+XXXXXX';	//put the auth+live ID here for your bots acct
 var USERID = '4f8e0186aaa5cd090d000097';							//put the bots user id here
 var ROOMID = '4e130f8d14169c1285007e79';							//put your turntable rooms id here
-// making Tab DA MAN
-//var MASTERID = '4e2dca1e4fe7d015ea003995';							//put your personal user id here
-// making KJC DA MAN
-var MASTERID = '4e0bbaf0a3f751466f0b64ad';							//put your personal user id here
-// trying multiple masters
-//var MASTERID = ['4e2dca1e4fe7d015ea003995', '4e0bbaf0a3f751466f0b64ad'];
+var MASTERID = 'XXXXXX';							//put your personal user id here
+//var MASTERID = '';							//put your personal user id here
 var MASTERNAME = 'Kim Jung Chill';									//put your personal user name here
-var CREATORID = '4e19d4a2a3f7511323005128';							//put your rooms creator ID here
-var CREATORNAME = 'jsides';											//put your rooms creator ID here
-
-var booList = ['Boo this man! BOOOOOOOOOO!', 'This song sucks!', 'Who picked this song? Cause its terrible'];
+var CREATORID = 'XXXXXX';							//put your rooms creator ID here
+var CREATORNAME = 'jsides';											//put your rooms creator name here
+var modList = [];													//Array for MODs
 
 //for API calls
 var http = require('http'); 
@@ -46,6 +38,8 @@ var bot = new Bot(AUTH, USERID, ROOMID);
 var theUsersList = { };
 //silent mode variable in case you want the bot to just be quiet
 var shutUp = false;
+//set this to false so we don't allow everyone Chillbot MOD level controls
+var ModACL = false;
 
 //functions
 //error writer
@@ -55,44 +49,25 @@ function errMsg(e) {
 }
 
 // load in the MODs from mod.json
-try {
-		MOD = JSON.parse(fs.readFileSync('..\mod.json', 'ascii'));
-	} catch(e) {
-		console.log(e);
-		console.log('Ensure that mod.json is present in this directory.');
-		//process.exit(0);
-	}	
-	
-//Swiped from Sparklebot.js https://github.com/sharedferret/Sparkle-Turntable-Bot
-//Checks if the user id is present in the admin list. Authentication
-//for admin-only privileges.
-global.admincheck = function (userid) {
-	for (i in moderators) {
-        if (userid == moderators[i]) {
-			console.log('modcheck is true');
-            return true;
-        }
-    }
-    
-    if (userid == MOD.admins) {
-		console.log('MOD admin check is true');
-		return true;
-    }
-	console.log('MOD admin check is false');
-	return false;
-}
-
+//try {
+//		MOD = JSON.parse(FS.readFileSync('mod', 'ascii'));
+//	} catch(e) {
+//		console.log(e);
+//		console.log('Ensure that mod.json is present in this directory.');
+//		//process.exit(0);
+//	}	
 
 //console messages for viewing room data in the console
-bot.on('roomChanged',  function (data) { console.log('The bot has changed room.', data); });
+//bot.on('roomChanged',  function (data) { console.log('The bot has changed room.', data); });
 bot.on('speak',        function (data) { console.log('Someone has spoken', data); });
-bot.on('update_votes', function (data) { console.log('Someone has voted',  data); });
+//bot.on('update_votes', function (data) { console.log('Someone has voted',  data); });
 bot.on('registered',   function (data) { console.log('Someone registered', data); });
-bot.on('add_DJ',   function (data) { console.log('DJ stepped up', data); });
-bot.on('rem_DJ',   function (data) { console.log('DJ stepped down', data); });
-bot.on('new_moderator', function (data) { console.log('New Mod', data); });
-bot.on('rem_moderator', function (data) { console.log('Mod removed', data); });
-bot.on('newsong', function (data) { console.log('New song', data); });
+//bot.on('add_DJ',   function (data) { console.log('DJ stepped up', data); });
+//bot.on('rem_DJ',   function (data) { console.log('DJ stepped down', data); });
+//bot.on('new_moderator', function (data) { console.log('New Mod', data); });
+//bot.on('rem_moderator', function (data) { console.log('Mod removed', data); });
+//bot.on('newsong', function (data) { console.log('New song', data); });
+//bot.on('snagged', function (data) { console.log('A snag!', data); });
 
 //user theUsersList code from https://github.com/alaingilbert/Turntable-API/blob/master/examples/users_list.js
 bot.on('roomChanged', function (data) {
@@ -103,10 +78,19 @@ bot.on('roomChanged', function (data) {
 	for (var i=0; i<users.length; i++) {
 		var user = users[i];
 		theUsersList['b' + user.userid] = user;
-		console.log('added ' + user + ' to theUsersList. UserID: ' +user.userid+ '.');
+		//console.log('added ' + user + ' to theUsersList. UserID: ' +user.userid+ '.');
+	}
+	// Reset the MODs list (in case we've removed or added one)
+	theModList = { };
+
+	var modsare = data.room.metadata.moderator_id;
+	for (var i=0; i<modsare.length; i++) {
+		var mod = modsare[i];
+		theModList['b' + mod.modid] = mod;
+		//console.log('added ' + mod + ' to theModList. UserID: ' +mod.userid+ '. UserName: '+mod.name+'.');
 	}
 });
-
+			
 bot.on('registered', function (data) {
    var user = data.user[0];
    theUsersList['b' + user.userid] = user;
@@ -116,7 +100,7 @@ bot.on('deregistered', function (data) {
    var user = data.user[0];
    delete theUsersList['b' + user.userid];
 });
-//END of user List section
+//END of user/mod List section
 
 //arrays for commands
 //boo array
@@ -159,12 +143,36 @@ var meowList = [
     "http://www.protias.com/Pictures/Super%20Troopers/meow.jpg",
     "http://sphotos.ak.fbcdn.net/hphotos-ak-snc3/hs195.snc3/20275_304481852744_293714027744_3524059_4812190_n.jpg"
 ];
-
+var props = [
+    "Nice selection Selecta!!", 
+    "great choice DJ!",
+    "are you reading my mind? 'cause I totally would have picked this track!",
+    "well played, well played!",
+    "seriously dope track mang..",
+    "wow, going to have to yoink this track!",
+    "the DJ, the DJ, the DJs ON FIRE!",
+    "MOAR OF THIS HOTNESS PLEASE!",
+    "dis mah jam!",
+    "sick cut. very sick!"
+];
+var bootcatcher = [
+    "seeya, wouldn't want to be ya", 
+    "THY NAME IS TROLL, BEGONE!",
+    "Don\'t let the door hit ya where the good lord split ya!",
+    "Chillout Tent 404: Access Denied",
+    "and that folks is how you recieve a :boot: in the behind",
+    "now that is a punting worth watching",
+    "we now return you to your regularly scheduled chill",
+    "bets on that fool returning and talking trash?",
+    "wow, the Troll B Gone spray *is* working after all",
+    "I.. I... don't even...."
+];
 
 // BEGIN main room bot actions and features
 
 //Allow chillbot to become a psychic medium who can channel your spirit..... AKA.. IM him and he speaks it to the room
-bot.on('pmmed', function(data){ 
+bot.on('pmmed', function (data){
+	//TODO: make the respond to ANY MOD
 	if (data.senderid == MASTERID) { 
 		try {
 			bot.speak(data.text);
@@ -174,17 +182,17 @@ bot.on('pmmed', function(data){
 	}
 });
 
-//welcome new people
-bot.on('registered', function (data) { 
+//welcome new/special people
+bot.on('registered', function (data){ 
 	if (shutUp == false) {
 		if (data.user[0].userid == USERID) {				//chillbot announces himself
 		//bot.speak('Never fear Chillout Tent Denizens! I, ' +data.user[0].name+ ' your faithful chillbot, have arrived!')
 		} else if (data.user[0].userid == MASTERID) {		//if the master arrives announce him specifically
-		  bot.speak('Dearest Subjects '+MASTERNAME+', your friendly neighborhood Dictator of Chill has arrived!') 
+			bot.speak('Dearest Subjects '+MASTERNAME+', your friendly neighborhood Dictator of Chill has arrived!') 
 		} else if (data.user[0].userid == CREATORID) {		//if the master arrives announce him specifically
-		  bot.speak('Tent denizens say hello to '+CREATORNAME+' - the Tents esteemed Creator!') 
+			bot.speak('Tent denizens say hello to '+CREATORNAME+' - the Tents esteemed Creator! *golf clap*') 
 		} else {
-		//bot.speak('Welcome '+data.user[0].name+'! Type /help to learn how to control me.'); //welcome the rest
+			//bot.speak('Welcome '+data.user[0].name+'! Type /help to learn how to control me.'); //welcome the rest
 		}
 	}
 });
@@ -195,26 +203,30 @@ bot.on('registered', function (data) {
 */
 
 //escorted off the stage sh** talk. //note that if you also use the rem_dj function this function will never trigger, the rem_dj will trigger instead
-bot.on('booted_user', function (data){ 
-	bot.speak('Don\'t let the door hit ya where the good lord split ya!'); 
+bot.on('booted_user', function (data){
+    var rndm = Math.floor(Math.random() * 10);
+    bot.speak(bootcatcher[rndm]);
 });
-
-//new DJ hype-man
+		
+//new DJ 
 bot.on('add_dj', function (data){ 
-	if (shutUp = false) {
+	if (shutUp == false) {
 		if (data.user[0].userid == USERID) { //the bot will announce he is DJing
-		  bot.speak('you SURE you want to make me do that?');
+			console.log('Chillbot told to DJ', data);
+			bot.speak('you SURE you want to make me do that?');
 		} else if (data.user[0].userid == MASTERID) { //the bot will announce you specially
-		  bot.speak('Dear Leader has taken the stage! Bow before '+MASTERNAME+'!'); 
+			console.log('MASTERID is taking the stage', data);
+			bot.speak('Dear Leader has taken the stage! Bow before '+MASTERNAME+'!'); 
 		} else {
-		  //bot.speak(data.user[0].name+' has taken the stage to amuse my master.'); //announce the new dj
-		  bot.speak('Welcome '+data.user[0].name+'! We Play Downtempo, NuJazz, electro-swing & Triphop. DJ queue list and *MUSICAL STYLE GUIDANCE HERE*: http://chillout-tent.wikispaces.com/'); //welcome the rest
+			//bot.speak(data.user[0].name+' has taken the stage to amuse my master.'); //announce the new dj
+			console.log('New DJ - reminding of genre', data);
+			bot.speak('Welcome @'+data.user[0].name+'! We Play Downtempo, NuJazz, electro-swing & Triphop. DJ queue list and *MUSICAL STYLE GUIDANCE HERE*: http://chillout-tent.wikispaces.com/'); //welcome the rest
 		}
 	}
 });
 
 //thanks for DJ'ing
-bot.on('rem_dj', function(data) { 
+bot.on('rem_dj', function (data){ 
 	if (shutUp == false) {
 		if (data.user[0].userid == USERID) { 
 		//do nothing. or write in something to have him say he has stepped down.
@@ -225,7 +237,7 @@ bot.on('rem_dj', function(data) {
 }); 
 
 //chat bot area
-bot.on('speak', function(data) {
+bot.on('speak', function (data) {
 	if (shutUp == false) {
 		if (data.text.match(/^\/hello$/)) {
 			bot.speak('Hey! How are you '+data.name+' ?');
@@ -235,7 +247,7 @@ bot.on('speak', function(data) {
 		}
 		if (data.text.match(/^\/help$/)) {
 			//bot.speak('My current command list is /hello, /help, /rules, /lyrics, /video, /boo, /cheer, /haters, /meow, /rich, /chuck, /winning, /chillbot. Plus a few hidden ones ;) remember to check for new updates!');
-			bot.speak('My current command list is /hello, /help, /rules, /video, /genre, /queue, /chillbot. Plus a few hidden ones ;) remember to check for new updates!');
+			bot.speak('My current command list is /hello, /help, /rules, /video, /genre, /queue, /props, /warn, /chillbot. Plus a few hidden ones ;) remember to check for new updates!');
 		}
 		if (data.text.match(/^\/rules$/)) {
 			bot.speak('Its our room, and our rules..\n\r Suck it up cupcake. \n\r Your room moderators are: enter them here'); //fill in with your information. line breaks and carriage returns will not display on the web browser but will on iPhone chat window.
@@ -270,14 +282,13 @@ bot.on('speak', function(data) {
 		if (data.text.match(/^\/rich$/)) {
 			bot.speak("I don't think you realize how rich he really is. In fact, I should put on a monocle.  /monocle");
 		}
-		if (data.text.match(/^\/props$/)) {
-			bot.speak('Nice selection Selecta!!!');
-		}	 
 		if (data.text.match(/^\/pm$'/)) {
 			bot.pm('Hey there! Type "/help" for a list of commands.', data.userid);
 		}	
-	
-
+		if ((data.text.match(/props/i)) && (data.userid != USERID)) {
+			var rndm = Math.floor(Math.random() * 10);
+			bot.speak(props[rndm]);	
+		}
 		// Respond to "/cheer" command
 		//    if (data.text.match(/^\/cheer$/)) {
 		//    	  var rndm = Math.floor(Math.random() * 3);
@@ -449,22 +460,17 @@ bot.on('speak', function(data) {
 	}
 // End "general bot chatting"
 });
-
-
 	
 // DJ control
 //this next section looks anywhere in the sentence for the word chillbot. if it was said by MASTERS user id, it will then look for any of the commands and react.
 bot.on('speak', function (data) {
+
 	// Use this if you only want the command available to BOTs master
 	if ((data.text.match(/chillbot/i)) && (data.userid == MASTERID)) { 
+ 
+	//if ((data.text.match(/chillbot/i)) && (isMod(gUserID == true))) { 
+	console.log('ModACL inside MOD area is set to: '+ModACL+'.');
 
-//	// Use this if you want the commands to be available to Moderators
-//	if ((data.text.match(/chillbot/i))) {
-//	// we'll only respond to /chillbot commands from MODs
-//	//
-//	// BROKEN
-//	if (admincheck(data.userid)) {
-	
 		//tell the bot to enter silent mode (doesnt announce users or welcome people or respond to commands other than admin commands)
 		if (data.text.match(/shutup/i)) {
 			shutUp = true;
@@ -482,6 +488,11 @@ bot.on('speak', function (data) {
 		}
 		//tells the bot to get off stage and get in the crowd
 		if (data.text.match(/getdown/i)) {                  
+			//bot.speak('Yes master.');
+			//bot.speak('Aural destruction mode de-activated.')
+			bot.remDj();
+		}
+		if (data.text.match(/stepdown/i)) {                  
 			//bot.speak('Yes master.');
 			//bot.speak('Aural destruction mode de-activated.')
 			bot.remDj();
@@ -592,10 +603,8 @@ bot.on('speak', function (data) {
 			console.log('Chrome mode ready.');
 			bot.modifyLaptop('chrome');
 		}
-		//End MOD check
-		//}
 	// End "repond to /chillbot <command>"	
-	}
+	};
 // End "do things while 'speaking'"
 });
 ///////////////////////////////////////////////////////////////////////////////
@@ -695,30 +704,30 @@ bot.on('speak', function (data) {
 // Live tweeting //Code from - https://github.com/AvianFlu/ntwitter
 //by default this is commented out for people who dont care about Twitter integration. Uncomment the below section, replace the parts with your own keys and URLs, delete the instructional comments out.
 
-// var twitter = require('ntwitter'); 
-// bot.on('newsong', function (data){ 
-//   // Tweet the new song from the twitter apps account you created. Gives the song name, artist, and #turntablefm hashtag
-//   var twit = new twitter({
-//     consumer_key: 'put your consumer key here', //add your consumer key
-//     consumer_secret: 'put your consumer secret key here', //add your consumer secret key
-//     access_token_key: 'put your access token key here', //add your access token
-//     access_token_secret: 'put your access token secret key in here' //add your access token secret
-//   });
-//   try {
-//     bot.roomInfo(true, function(data) { //tweet on new song change event
-//       var currSong = data.room.metadata.current_song.metadata.song; //grabs the current songs name
-//       var currArtist = data.room.metadata.current_song.metadata.artist; //grabs the current songs artist
-//       twit
-//       .verifyCredentials(function (err, data) {
-//         console.log(data);
-//       })
-//       .updateStatus('Now playing! ' + currSong + ' by: ' + currArtist + ' #turntablefm http://turntable.fm/put_your_rooms_url_here' , //replace the URL with your own rooms or delete.
-//         function (err, data) {
-//           console.log(data);
-//         }
-//       );
-//     });
-//   } catch (err) {
-//       bot.speak(err.toString());
-//   }
-// });
+var twitter = require('ntwitter'); 
+bot.on('newsong', function (data){ 
+	// Tweet the new song from the twitter apps account you created. Gives the song name, artist, and #turntablefm hashtag
+	var twit = new twitter({
+		consumer_key: 'XXXXXX', //add your consumer key
+		consumer_secret: 'XXXXXX', //add your consumer secret key
+		access_token_key: 'XXXXXX', //add your access token
+		access_token_secret: 'XXXXXX' //add your access token secret
+	});
+	try {
+		bot.roomInfo(true, function(data) { //tweet on new song change event
+			var currSong = data.room.metadata.current_song.metadata.song; //grabs the current songs name
+			var currArtist = data.room.metadata.current_song.metadata.artist; //grabs the current songs artist
+			twit
+			.verifyCredentials(function (err, data) {
+				console.log(data);
+			})
+			.updateStatus('Now playing! ' + currSong + ' by: ' + currArtist + ' http://turntable.fm/chillout_tent5 #turntablefm #chillouttent', //replace the URL with your own rooms or delete.
+				function (err, data) {
+					console.log(data);
+				}
+			);
+		});
+	} catch (err) {
+		bot.speak(err.toString());
+	}
+});
